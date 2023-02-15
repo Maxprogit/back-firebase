@@ -1,8 +1,8 @@
-const express = require ('express')
-const bcrypt = require ('bcrypt')
-const { initializeApp } = require ('firebase/app')
-const { getFirestore, setDoc, getDoc, collection } = require ('firebase/firestore')
-const dotEnv = require('dotenv')    
+const express = require('express')
+const bcrypt = require('bcrypt')
+const { initializeApp } = require('firebase/app')
+const { getFirestore, setDoc, getDoc, collection, doc, getDocs } = require('firebase/firestore')
+require('dotenv/config')    
 
 //Configuracion de firebase
 const firebaseConfig = {
@@ -26,7 +26,7 @@ const firebaseConfig = {
 
   //Rutas para las peticiones EndPoint | API
   //Ruta para el registro
-  app.post('/registro', (req, res) =>{
+  app.post('/registro', (req, res) => {
     const { name, lastname, email, password, number} = req.body
 
     //Validacion de los datos 
@@ -34,51 +34,60 @@ const firebaseConfig = {
       res.json({
         'alert': 'nombre requiere minimo 3 caracters'
       })
+    } else if(lastname.length < 3) {
+      res.json({
+        'alert': 'nombre requiere minimo 3 caracters'
+      })
     } else if (!email.length){
       res.json({
-        'alert': 'Debes escribir un correo electronico'
+        'alert': 'debes escribir un correo electronico'
       })
-    }else if (password.length) {
+    }else if (password.length < 8) {
       res.json({
-        'alert': 'nombre requiere minimo 8 caracteres'
+        'alert': 'contraseña requiere minimo 8 caracteres'
       })
     } else if (!Number(number) || number.length < 10) {
-      res.json( {
+      res.json({
         'alert': 'Introduce un numero telefonico correcto'
       })
-    } else if (lastname.length) {
-      res.json({
-        'alert': ''
-    })
-         //Verificar que el correo no exista en la coleccion
-         getDoc(doc(user, email)).then((user => {
-          if (user.exists()) {
+    }  else {
+    const users = coleccion(db, 'users')
+    //Verificar que el correo no exista en la coleccion
+    getDoc(doc(users, email)).then( user => {
+      if (user.exists()) {
+        'alert'; 'el correo ya existe en la BD'
+      } else {
+        bcrypt.genSalt(10, (err, salt) => {
+          bcrypt.hash(password, salt, (err, hash) => {
+            req.body.password = hash
 
-          }
-         })
-      
-    }
+            //Guardar en la BD 
+            setDoc(doc(users, email), req.body).then(() => {
+              
+              res.json({
+                'alert': 'succes',
+                 data
+              })
+            })
+          })
+        })
+      }
     })
-    //Guardar en la BD 
-    getDoc(doc(user, email), req.body).then(() => {
-      res.json({
+  }
+})
         
-      
-    )
-    
   app.get('/usuarios', (req, res) => {
-    const users = collection(db 'users')
-    console.log('usuarios', users)
+    const users = collection(db, users)
+    //let data = 
     res.json({
-      'alert': 'success',
-      data
+      'alert': 'succes', 
+      users
     })
-  })
-
+  })       
 
   const PORT = process.env.PORT || 19000
 
   //Ejecutamos el servidor
   app.listen(PORT, () => {
-    console.log(`Escuchando el puerto:  ${PORT}`)
+    console.log(`Escuchando el puerto: ${PORT}`)
   })
