@@ -2,7 +2,7 @@ const express = require('express')
 const bcrypt = require('bcrypt')
 const { initializeApp } = require('firebase/app')
 const cors = require('cors')
-const { getFirestore, setDoc, getDoc, collection, doc, getDocs } = require('firebase/firestore')
+const { getFirestore, setDoc, getDoc, collection, doc, getDocs, deleteDoc } = require('firebase/firestore')
 require('dotenv/config')    
 
 //Configuracion de firebase
@@ -36,7 +36,7 @@ const firebaseConfig = {
   //Rutas para las peticiones EndPoint | API
   //Ruta para el registro
   app.post('/registro', (req, res) => {
-    const { name, lastname, email, password, number} = req.body
+    const { name, lastname, email, password, number } = req.body
 
     //Validacion de los datos 
     if(name.length < 3) {
@@ -60,11 +60,14 @@ const firebaseConfig = {
         'alert': 'Introduce un numero telefonico correcto'
       })
     }  else {
-    const users = coleccion(db, 'users')
+    const users = collection(db, 'users')
     //Verificar que el correo no exista en la coleccion
     getDoc(doc(users, email)).then( user => {
       if (user.exists()) {
-        'alert'; 'el correo ya existe en la BD'
+        res.json({
+          'alert': 'el correo ya existe en la BD'
+        })
+        
       } else {
         bcrypt.genSalt(10, (err, salt) => {
           bcrypt.hash(password, salt, (err, hash) => {
@@ -74,7 +77,7 @@ const firebaseConfig = {
             setDoc(doc(users, email), req.body).then(() => {
               
               res.json({
-                'alert': 'succes',
+                'alert': 'success',
                  data
               })
             })
@@ -107,8 +110,8 @@ const firebaseConfig = {
         })
       }
       
-      const users = collection(db, users)
-      getDoc(doc(users, email)).then( users =>{
+      const users = collection(db, 'users')
+      getDoc(doc(users, email)).then( user =>{
         if (!user.exists()){
           return res.json({
             'alerta': 'Correo no registrado en la base de datos'
@@ -131,6 +134,63 @@ const firebaseConfig = {
         }
       })
   })
+
+  //Ruta borrar
+  app.post('/delete', (req, res) => {
+    let { id } = req.body
+
+    deleteDoc(doc(collection(db, 'users'), id))
+    .then((response) => {
+      res.json({
+        'alert': 'success'
+      })
+    })
+    .catch((error) => {
+      res.json({
+        'alert': error
+      })
+    })
+  })
+
+  app.post('/update', (req, res) => {
+    const { email, name, lastname, number } = req.body
+
+    //Validacion de los datos 
+    if(name.length < 3) {
+      res.json({
+        'alert': 'nombre requiere minimo 3 caracters'
+      })
+    } else if(lastname.length < 3) {
+      res.json({
+        'alert': 'nombre requiere minimo 3 caracters'
+      })
+
+    } else if (!Number(number) || number.length < 10) {
+      res.json({
+        'alert': 'Introduce un numero telefonico correcto'
+      })
+    }  else { 
+      db.collection('users').doc(email)
+      const updateData = {
+        name, 
+        lastname,
+        number
+      }
+      updateDoc(doc(collection(db, 'users'), updateData, email))
+      .then((response) => {
+        res.json({
+          'alert': 'success'
+        })
+      })
+      .catch(() => {
+        res.json({
+          'alert': error
+        })
+      })
+    }
+  })
+
+
 
   const PORT = process.env.PORT || 19000
 
