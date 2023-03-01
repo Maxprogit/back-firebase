@@ -78,7 +78,7 @@ const firebaseConfig = {
               
               res.json({
                 'alert': 'success',
-                 data
+                 
               })
             })
           })
@@ -89,7 +89,7 @@ const firebaseConfig = {
 })
         
   app.get('/usuarios', async (req, res) => {
-    const colRef  = collection(db, users)
+    const colRef  = collection(db, 'users')
     const docsSnap = await getDocs(colRef)
     let data = []
     docsSnap.forEach(doc => {
@@ -123,7 +123,10 @@ const firebaseConfig = {
               res.json({
                 'alert': 'Success',
                 name: data.name,
-                email: data.email
+                email: data.email,
+                password: data.password,
+                
+                
               })
             } else {
               return res.json({
@@ -137,9 +140,9 @@ const firebaseConfig = {
 
   //Ruta borrar
   app.post('/delete', (req, res) => {
-    let { id } = req.body
+    let { email } = req.body
 
-    deleteDoc(doc(collection(db, 'users'), id))
+    deleteDoc(doc(collection(db, 'users'), email))
     .then((response) => {
       res.json({
         'alert': 'success'
